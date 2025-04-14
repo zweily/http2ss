@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  http2ss:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: http2ss
+    restart: unless-stopped
+    ports:
+      # HTTP proxy port
+      - "8080:8080"
+      # HTTPS proxy port
+      - "8443:8443"
+      # SOCKS5 proxy port
+      - "1081:1081"
+    environment:
+      - SS_SERVER=your_ss_server_ip
+      - SS_PORT=8388
+      - SS_PASSWORD=your_password
+      - SS_METHOD=aes-256-gcm
+    volumes:
+      - ./logs:/var/log
