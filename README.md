@@ -27,8 +27,47 @@ environment:
 
 ### Step 2: Build and run the container
 
+#### Option 1: Using Docker Compose (recommended)
+
+With Docker Compose, you don't need to manually build the image first. The Docker Compose command will automatically build the image based on the Dockerfile:
+
+**Docker Compose V2 (Recommended):**
 ```bash
+# Build and start the container
+docker compose up -d
+
+# Rebuild the image if needed
+docker compose up -d --build
+```
+
+**Docker Compose V1 (Legacy):**
+```bash
+# Build and start the container
 docker-compose up -d
+
+# Rebuild the image if needed
+docker-compose up -d --build
+```
+
+#### Option 2: Using Dockerfile directly
+
+If you prefer to build and run using the Dockerfile directly:
+
+1. Build the Docker image:
+```bash
+docker build -t http2ss .
+```
+
+2. Run the container:
+```bash
+docker run -d --name http2ss \
+  -p 8080:8080 -p 8443:8443 -p 1081:1081 \
+  -e SS_SERVER=your_ss_server_ip \
+  -e SS_PORT=8388 \
+  -e SS_PASSWORD=your_password \
+  -e SS_METHOD=aes-256-gcm \
+  -v $(pwd)/logs:/var/log \
+  http2ss
 ```
 
 ### Step 3: Configure your devices to use the proxy
