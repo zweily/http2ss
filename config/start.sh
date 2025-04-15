@@ -4,9 +4,9 @@ set -e
 echo "Starting HTTP/HTTPS/SOCKS proxy with Shadowsocks client..."
 
 # Ensure folders exist
-mkdir -p /var/log/3proxy /var/log/supervisor
+mkdir -p /var/log/privoxy /var/log/supervisor
 
-# Check if environment variables are set and update config files if they are
+# Check if environment variables are set and update Shadowsocks config if they are
 if [ ! -z "$SS_SERVER" ]; then
     sed -i "s/\"server\": \".*\"/\"server\": \"$SS_SERVER\"/" /etc/shadowsocks-libev/config.json
 fi
