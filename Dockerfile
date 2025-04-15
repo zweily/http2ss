@@ -31,7 +31,7 @@ RUN cd /tmp && \
     cd shadowsocks-libev && \
     git submodule update --init --recursive && \
     ./autogen.sh && \
-    ./configure --prefix=/usr && \
+    ./configure --prefix=/usr --disable-documentation && \
     make && \
     make install && \
     cd .. && \
