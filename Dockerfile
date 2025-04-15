@@ -9,8 +9,6 @@ RUN apk update && apk add --no-cache \
     supervisor \
     # For HTTP/HTTPS proxy (replacing 3proxy)
     privoxy \
-    # For SOCKS proxy (replacing 3proxy)
-    microsocks \
     # For shadowsocks-libev build
     gcc \
     make \
@@ -39,8 +37,17 @@ RUN cd /tmp && \
     cd .. && \
     rm -rf shadowsocks-libev
 
+# Install microsocks (SOCKS5 proxy) from source
+RUN cd /tmp && \
+    git clone https://github.com/rofl0r/microsocks.git && \
+    cd microsocks && \
+    make && \
+    install -m755 microsocks /usr/local/bin/ && \
+    cd .. && \
+    rm -rf microsocks
+
 # Create directories for config and logs
-RUN mkdir -p /etc/shadowsocks-libev /etc/privoxy /var/log/privoxy /var/log/supervisor /etc/microsocks
+RUN mkdir -p /etc/shadowsocks-libev /etc/privoxy /var/log/privoxy /var/log/supervisor
 
 # Copy configuration files
 COPY ./config/shadowsocks-libev.json /etc/shadowsocks-libev/config.json
