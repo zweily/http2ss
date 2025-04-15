@@ -7,35 +7,19 @@ RUN apk update && apk add --no-cache \
     tzdata \
     ca-certificates \
     supervisor \
-    # For HTTP/HTTPS proxy (replacing 3proxy)
+    # For HTTP/HTTPS proxy
     privoxy \
-    # For shadowsocks-libev build
+    # For Go and go-shadowsocks2 build
+    git \
+    go \
+    # For microsocks build
     gcc \
     make \
-    musl-dev \
-    libev-dev \
-    libsodium-dev \
-    mbedtls-dev \
-    pcre-dev \
-    c-ares-dev \
-    autoconf \
-    automake \
-    build-base \
-    libtool \
-    linux-headers \
-    git
+    musl-dev
 
-# Install shadowsocks-libev from source
-RUN cd /tmp && \
-    git clone https://github.com/shadowsocks/shadowsocks-libev.git && \
-    cd shadowsocks-libev && \
-    git submodule update --init --recursive && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr --disable-documentation && \
-    make && \
-    make install && \
-    cd .. && \
-    rm -rf shadowsocks-libev
+# Install go-shadowsocks2 (alternative implementation to shadowsocks-libev)
+RUN go install github.com/shadowsocks/go-shadowsocks2@latest && \
+    cp /root/go/bin/go-shadowsocks2 /usr/local/bin/
 
 # Install microsocks (SOCKS5 proxy) from source
 RUN cd /tmp && \
@@ -47,10 +31,10 @@ RUN cd /tmp && \
     rm -rf microsocks
 
 # Create directories for config and logs
-RUN mkdir -p /etc/shadowsocks-libev /etc/privoxy /var/log/privoxy /var/log/supervisor
+RUN mkdir -p /etc/shadowsocks /etc/privoxy /var/log/privoxy /var/log/supervisor
 
 # Copy configuration files
-COPY ./config/shadowsocks-libev.json /etc/shadowsocks-libev/config.json
+COPY ./config/shadowsocks-libev.json /etc/shadowsocks/config.json
 COPY ./config/privoxy.conf /etc/privoxy/config
 COPY ./config/supervisord.conf /etc/supervisord.conf
 COPY ./config/start.sh /start.sh

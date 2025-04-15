@@ -9,57 +9,40 @@ mkdir -p /var/log/privoxy /var/log/supervisor
 # Enable more verbose debugging
 echo "Setting up configurations..."
 
-# Check if environment variables are set and update Shadowsocks config if they are
-if [ ! -z "$SS_SERVER" ]; then
-    echo "Setting Shadowsocks server to $SS_SERVER"
-    sed -i "s/\"server\": \".*\"/\"server\": \"$SS_SERVER\"/" /etc/shadowsocks-libev/config.json
-else
+# Verify required environment variables
+if [ -z "$SS_SERVER" ]; then
     echo "ERROR: SS_SERVER environment variable not set. Shadowsocks will fail to connect."
     echo "Please set SS_SERVER to your Shadowsocks server IP or hostname."
+    export SS_SERVER="your_ss_server_ip"
+    echo "Using placeholder value for now, this will not work correctly."
 fi
 
-if [ ! -z "$SS_PORT" ]; then
-    echo "Setting Shadowsocks port to $SS_PORT"
-    sed -i "s/\"server_port\": [0-9]*/\"server_port\": $SS_PORT/" /etc/shadowsocks-libev/config.json
-else
-    echo "WARNING: SS_PORT environment variable not set. Using default port from config."
+if [ -z "$SS_PORT" ]; then
+    echo "WARNING: SS_PORT environment variable not set. Using default port 8388."
+    export SS_PORT="8388"
 fi
 
-if [ ! -z "$SS_PASSWORD" ]; then
-    echo "Setting Shadowsocks password"
-    sed -i "s/\"password\": \".*\"/\"password\": \"$SS_PASSWORD\"/" /etc/shadowsocks-libev/config.json
-else
+if [ -z "$SS_PASSWORD" ]; then
     echo "ERROR: SS_PASSWORD environment variable not set. Shadowsocks will fail to connect."
     echo "Please set SS_PASSWORD to your Shadowsocks server password."
+    export SS_PASSWORD="your_password"
+    echo "Using placeholder value for now, this will not work correctly."
 fi
 
-if [ ! -z "$SS_METHOD" ]; then
-    echo "Setting Shadowsocks encryption method to $SS_METHOD"
-    sed -i "s/\"method\": \".*\"/\"method\": \"$SS_METHOD\"/" /etc/shadowsocks-libev/config.json
+if [ -z "$SS_METHOD" ]; then
+    echo "INFO: SS_METHOD not specified. Using AES-256-GCM as the default encryption method."
+    export SS_METHOD="AES-256-GCM"
 else
-    echo "Using aes-256-gcm encryption method from config"
-    # The default method is already aes-256-gcm in the config file
+    echo "Using $SS_METHOD encryption method"
+    # Convert to uppercase for go-shadowsocks2 compatibility
+    export SS_METHOD=$(echo "$SS_METHOD" | tr '[:lower:]' '[:upper:]')
 fi
 
-# Ensure all optimization settings are applied for AEAD ciphers
-echo "Applying optimizations for AEAD cipher..."
-if ! grep -q "no_delay" /etc/shadowsocks-libev/config.json; then
-    sed -i 's/"mode": ".*"/"mode": "tcp_only",\n    "no_delay": true/' /etc/shadowsocks-libev/config.json
-fi
-
-# Force TCP only mode to avoid UDP-related issues
-echo "Setting TCP-only mode to avoid potential UDP relay issues"
-sed -i 's/"mode": ".*"/"mode": "tcp_only"/' /etc/shadowsocks-libev/config.json
-
-# Dump final shadowsocks config (without password) for debugging
-echo "Final Shadowsocks configuration:"
-grep -v password /etc/shadowsocks-libev/config.json
-
-# Check that microsocks exists
-if [ ! -f /usr/local/bin/microsocks ]; then
-    echo "ERROR: microsocks not found at /usr/local/bin/microsocks"
-    echo "This could be due to a build failure."
-fi
+# Display configuration (without leaking password)
+echo "Shadowsocks configuration:"
+echo "  Server: $SS_SERVER"
+echo "  Port: $SS_PORT"
+echo "  Method: $SS_METHOD"
 
 # Start supervisord
 echo "Starting supervisord..."
