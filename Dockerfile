@@ -1,14 +1,56 @@
 FROM alpine:latest
 
-# Install required packages
+# Install base packages and dependencies
 RUN apk update && apk add --no-cache \
-    shadowsocks-libev \
-    3proxy \
     bash \
     curl \
     tzdata \
     ca-certificates \
-    supervisor
+    supervisor \
+    # Dependencies for building 3proxy
+    gcc \
+    make \
+    musl-dev \
+    libressl-dev \
+    # For shadowsocks-libev
+    libev-dev \
+    libsodium-dev \
+    mbedtls-dev \
+    pcre-dev \
+    c-ares-dev \
+    autoconf \
+    automake \
+    build-base \
+    libtool \
+    linux-headers \
+    git
+
+# Install shadowsocks-libev from source
+RUN cd /tmp && \
+    git clone https://github.com/shadowsocks/shadowsocks-libev.git && \
+    cd shadowsocks-libev && \
+    git submodule update --init --recursive && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf shadowsocks-libev
+
+# Install 3proxy from source
+RUN cd /tmp && \
+    curl -OL https://github.com/3proxy/3proxy/archive/refs/tags/0.9.4.tar.gz && \
+    tar -xvf 0.9.4.tar.gz && \
+    cd 3proxy-0.9.4 && \
+    make -f Makefile.Linux && \
+    mkdir -p /usr/local/3proxy/bin && \
+    cp bin/3proxy /usr/local/3proxy/bin/ && \
+    cp bin/mycrypt /usr/local/3proxy/bin/ && \
+    cp bin/dighosts /usr/local/3proxy/bin/ && \
+    cp bin/ftppr /usr/local/3proxy/bin/ && \
+    ln -s /usr/local/3proxy/bin/3proxy /usr/bin/3proxy && \
+    cd .. && \
+    rm -rf 3proxy-0.9.4 0.9.4.tar.gz
 
 # Create directories
 RUN mkdir -p /etc/shadowsocks-libev /etc/3proxy /var/log/3proxy /var/log/supervisor
