@@ -21,7 +21,6 @@ RUN go install github.com/shadowsocks/go-shadowsocks2@latest && \
 RUN mkdir -p /etc/shadowsocks /etc/privoxy /var/log/privoxy /var/log/supervisor
 
 # Copy configuration files
-COPY ./config/shadowsocks-libev.json /etc/shadowsocks/config.json
 COPY ./config/privoxy.conf /etc/privoxy/config
 COPY ./config/supervisord.conf /etc/supervisord.conf
 COPY ./config/start.sh /start.sh
