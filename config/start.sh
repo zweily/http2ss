@@ -37,23 +37,22 @@ if [ ! -z "$SS_METHOD" ]; then
     echo "Setting Shadowsocks encryption method to $SS_METHOD"
     sed -i "s/\"method\": \".*\"/\"method\": \"$SS_METHOD\"/" /etc/shadowsocks-libev/config.json
 else
-    # Try different encryption methods if not specified - aes-256-gcm might not be supported
-    echo "WARNING: SS_METHOD environment variable not set. Will try a different method."
-    sed -i 's/"method": "aes-256-gcm"/"method": "chacha20-ietf-poly1305"/' /etc/shadowsocks-libev/config.json
-    echo "Changed encryption method to chacha20-ietf-poly1305"
+    echo "Using aes-256-gcm encryption method from config"
+    # The default method is already aes-256-gcm in the config file
 fi
 
-# Fix for AEAD cipher related issues
-echo "Applying fix for AEAD cipher compatibility issues..."
-if grep -q "no_delay" /etc/shadowsocks-libev/config.json; then
-    echo "no_delay already exists in config"
-else
-    # Add no_delay option to improve compatibility
-    sed -i 's/"mode": "tcp_and_udp"/"mode": "tcp_and_udp",\n    "no_delay": true/' /etc/shadowsocks-libev/config.json
+# Ensure all optimization settings are applied for AEAD ciphers
+echo "Applying optimizations for AEAD cipher..."
+if ! grep -q "no_delay" /etc/shadowsocks-libev/config.json; then
+    sed -i 's/"mode": ".*"/"mode": "tcp_only",\n    "no_delay": true/' /etc/shadowsocks-libev/config.json
 fi
+
+# Force TCP only mode to avoid UDP-related issues
+echo "Setting TCP-only mode to avoid potential UDP relay issues"
+sed -i 's/"mode": ".*"/"mode": "tcp_only"/' /etc/shadowsocks-libev/config.json
 
 # Dump final shadowsocks config (without password) for debugging
-echo "Shadowsocks configuration:"
+echo "Final Shadowsocks configuration:"
 grep -v password /etc/shadowsocks-libev/config.json
 
 # Check that microsocks exists
