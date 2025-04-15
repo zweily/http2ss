@@ -8,11 +8,9 @@ services:
     container_name: http2ss
     restart: unless-stopped
     ports:
-      # HTTP proxy port
+      # HTTP proxy port (works for both HTTP and HTTPS traffic)
       - "8080:8080"
-      # HTTPS proxy port
-      - "8443:8443"
-      # Shadowsocks SOCKS5 proxy port (direct)
+      # Shadowsocks SOCKS5 proxy port
       - "1080:1080"
     environment:
       - SS_SERVER=your_ss_server_ip

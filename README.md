@@ -1,14 +1,13 @@
 # HTTP2SS - HTTP/HTTPS/SOCKS Proxy with Shadowsocks Client
 
-This Docker container combines HTTP/HTTPS proxy (using Privoxy) and SOCKS5 proxy (using go-shadowsocks2) with a Shadowsocks client. It allows you to:
+This Docker container combines HTTP proxy (using Privoxy) and SOCKS5 proxy (using go-shadowsocks2) with a Shadowsocks client. It allows you to:
 
-1. Connect to the container using standard HTTP, HTTPS, or SOCKS proxy protocols from your local network
+1. Connect to the container using standard HTTP or SOCKS proxy protocols from your local network
 2. Forward all traffic through a remote Shadowsocks server
 
 ## Exposed Ports
 
-- **8080**: HTTP proxy (Privoxy)
-- **8443**: HTTPS proxy (Privoxy)
+- **8080**: HTTP proxy (Privoxy) - **Use this for both HTTP and HTTPS traffic**
 - **1080**: SOCKS5 proxy (go-shadowsocks2)
 
 ## How to Use
@@ -61,7 +60,7 @@ docker build -t http2ss .
 2. Run the container:
 ```bash
 docker run -d --name http2ss \
-  -p 8080:8080 -p 8443:8443 -p 1080:1080 \
+  -p 8080:8080 -p 1080:1080 \
   -e SS_SERVER=your_ss_server_ip \
   -e SS_PORT=8388 \
   -e SS_PASSWORD=your_password \
@@ -74,19 +73,30 @@ docker run -d --name http2ss \
 
 Configure your applications or devices to use one of the following proxies:
 
-- HTTP Proxy: `http://<your-docker-host-ip>:8080`
-- HTTPS Proxy: `https://<your-docker-host-ip>:8443`
-- SOCKS5 Proxy: `socks5://<your-docker-host-ip>:1080`
+- **HTTP Proxy**: `http://<your-docker-host-ip>:8080`  
+  _Use this for both HTTP and HTTPS traffic. Modern clients automatically use the CONNECT method for HTTPS sites._
+- **SOCKS5 Proxy**: `socks5://<your-docker-host-ip>:1080`
+
+## Important Note About HTTPS Traffic
+
+When configuring clients to use this proxy:
+
+1. **For browsing HTTPS websites**: Use port 8080 (HTTP proxy) for all traffic, including HTTPS. 
+   Modern browsers and clients automatically use the HTTP CONNECT method to tunnel HTTPS connections
+   through an HTTP proxy.
+
+2. **Privoxy doesn't act as a true HTTPS proxy** with SSL termination. The port 8443 in Privoxy's
+   configuration is just listening for HTTP requests on that port, not for HTTPS connections.
 
 ## Technical Implementation
 
 This container uses:
 - **go-shadowsocks2**: SOCKS5 proxy client that connects to your remote Shadowsocks server (port 1080)
-- **Privoxy**: HTTP/HTTPS proxy server that forwards traffic to Shadowsocks (ports 8080, 8443)
+- **Privoxy**: HTTP proxy server that forwards traffic to Shadowsocks (port 8080)
 
 ## Adding Authentication (Optional)
 
-To add authentication to your HTTP/HTTPS proxy:
+To add authentication to your HTTP proxy:
 
 1. Edit the `config/privoxy.conf` file and add authentication configuration
 2. Rebuild the container:
@@ -106,7 +116,19 @@ The Shadowsocks settings are configured via environment variables in docker-comp
 
 ### Custom Privoxy Settings
 
-Modify `config/privoxy.conf` to customize the HTTP/HTTPS proxy behavior.
+Modify `config/privoxy.conf` to customize the HTTP proxy behavior.
+
+## Future Enhancements
+
+### True HTTPS Proxy Support
+
+For true HTTPS proxy functionality (with SSL termination), a future enhancement could include adding a component like Stunnel or HAProxy to handle the SSL connections. This would work as follows:
+
+1. Stunnel/HAProxy would listen on port 8443 and handle SSL termination
+2. It would then forward the decrypted traffic to Privoxy
+3. Privoxy would forward the traffic to Shadowsocks
+
+This enhancement would be useful for clients that specifically require an HTTPS proxy with SSL termination.
 
 ## Troubleshooting
 
@@ -129,3 +151,4 @@ If you encounter connection problems:
 
 1. **Verify your Shadowsocks server details** are correct in docker-compose.yml
 2. **Check that your Shadowsocks server supports the encryption method** specified in SS_METHOD
+3. **For HTTPS sites**, make sure you're using the HTTP proxy (port 8080) and not trying to use port 8443 as an HTTPS proxy
