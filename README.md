@@ -1,15 +1,16 @@
 # HTTP2SS - HTTP/HTTPS/SOCKS Proxy with Shadowsocks Client
 
-This Docker container combines HTTP/HTTPS proxy (using Privoxy) and SOCKS proxy (using microsocks) with a Shadowsocks client. It allows you to:
+This Docker container combines HTTP/HTTPS proxy (using Privoxy) and SOCKS proxy (using microsocks and go-shadowsocks2) with a Shadowsocks client. It allows you to:
 
 1. Connect to the container using standard HTTP, HTTPS, or SOCKS proxy protocols from your local network
 2. Forward all traffic through a remote Shadowsocks server
 
 ## Exposed Ports
 
-- **8080**: HTTP proxy
-- **8443**: HTTPS proxy
-- **1081**: SOCKS5 proxy
+- **8080**: HTTP proxy (Privoxy)
+- **8443**: HTTPS proxy (Privoxy)
+- **1081**: SOCKS5 proxy (microsocks)
+- **1080**: Direct Shadowsocks SOCKS5 proxy (go-shadowsocks2)
 
 ## How to Use
 
@@ -61,7 +62,7 @@ docker build -t http2ss .
 2. Run the container:
 ```bash
 docker run -d --name http2ss \
-  -p 8080:8080 -p 8443:8443 -p 1081:1081 \
+  -p 8080:8080 -p 8443:8443 -p 1081:1081 -p 1080:1080 \
   -e SS_SERVER=your_ss_server_ip \
   -e SS_PORT=8388 \
   -e SS_PASSWORD=your_password \
@@ -76,7 +77,17 @@ Configure your applications or devices to use one of the following proxies:
 
 - HTTP Proxy: `http://<your-docker-host-ip>:8080`
 - HTTPS Proxy: `https://<your-docker-host-ip>:8443`
-- SOCKS5 Proxy: `socks5://<your-docker-host-ip>:1081`
+- SOCKS5 Proxy (via microsocks): `socks5://<your-docker-host-ip>:1081`
+- SOCKS5 Proxy (direct via Shadowsocks): `socks5://<your-docker-host-ip>:1080`
+
+## Technical Implementation
+
+This container uses:
+- **go-shadowsocks2**: SOCKS5 proxy client that connects to your remote Shadowsocks server (port 1080)
+- **Privoxy**: HTTP/HTTPS proxy server that forwards traffic to Shadowsocks (ports 8080, 8443)
+- **microsocks**: Additional SOCKS5 proxy that forwards traffic to Shadowsocks (port 1081)
+
+The direct Shadowsocks SOCKS5 proxy (port 1080) is generally the most reliable option since it has the least overhead.
 
 ## Adding Authentication (Optional)
 
@@ -92,15 +103,15 @@ To add authentication to your HTTP/HTTPS proxy:
 
 ### Custom Shadowsocks Settings
 
-You can directly edit the `config/shadowsocks-libev.json` file for more advanced Shadowsocks client configurations.
+The Shadowsocks settings are configured via environment variables in docker-compose.yml. Make sure to set:
+- SS_SERVER: Your Shadowsocks server IP or hostname
+- SS_PORT: Your Shadowsocks server port
+- SS_PASSWORD: Your Shadowsocks password
+- SS_METHOD: Your encryption method (default is aes-256-gcm)
 
 ### Custom Privoxy Settings
 
 Modify `config/privoxy.conf` to customize the HTTP/HTTPS proxy behavior.
-
-### Custom microsocks Settings
-
-The microsocks settings can be adjusted in the `config/supervisord.conf` file by modifying the command-line parameters.
 
 ## Troubleshooting
 
@@ -113,7 +124,15 @@ docker compose logs
 For more detailed logs:
 
 ```bash
+docker exec -it http2ss cat /var/log/supervisor/shadowsocks-stdout.log
 docker exec -it http2ss cat /var/log/privoxy/privoxy.log
-docker exec -it http2ss cat /var/log/supervisor/shadowsocks-stderr.log
-docker exec -it http2ss cat /var/log/supervisor/microsocks-stderr.log
+docker exec -it http2ss cat /var/log/supervisor/microsocks-stdout.log
 ```
+
+### Common Issues
+
+If you encounter connection problems:
+
+1. **Verify your Shadowsocks server details** are correct in docker-compose.yml
+2. **Try the direct Shadowsocks SOCKS5 proxy** on port 1080 to bypass Privoxy
+3. **Check that your Shadowsocks server supports the encryption method** specified in SS_METHOD
