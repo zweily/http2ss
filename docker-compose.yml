@@ -12,8 +12,6 @@ services:
       - "8080:8080"
       # HTTPS proxy port
       - "8443:8443"
-      # SOCKS5 proxy port (microsocks)
-      - "1081:1081"
       # Shadowsocks SOCKS5 proxy port (direct)
       - "1080:1080"
     environment:

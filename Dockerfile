@@ -11,24 +11,11 @@ RUN apk update && apk add --no-cache \
     privoxy \
     # For Go and go-shadowsocks2 build
     git \
-    go \
-    # For microsocks build
-    gcc \
-    make \
-    musl-dev
+    go
 
 # Install go-shadowsocks2 (alternative implementation to shadowsocks-libev)
 RUN go install github.com/shadowsocks/go-shadowsocks2@latest && \
     cp /root/go/bin/go-shadowsocks2 /usr/local/bin/
-
-# Install microsocks (SOCKS5 proxy) from source
-RUN cd /tmp && \
-    git clone https://github.com/rofl0r/microsocks.git && \
-    cd microsocks && \
-    make && \
-    install -m755 microsocks /usr/local/bin/ && \
-    cd .. && \
-    rm -rf microsocks
 
 # Create directories for config and logs
 RUN mkdir -p /etc/shadowsocks /etc/privoxy /var/log/privoxy /var/log/supervisor
@@ -49,8 +36,6 @@ EXPOSE 1080
 EXPOSE 8080
 # HTTPS proxy port (Privoxy)
 EXPOSE 8443
-# SOCKS5 proxy port (microsocks)
-EXPOSE 1081
 
 # Set entrypoint
 ENTRYPOINT ["/start.sh"]
