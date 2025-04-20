@@ -1,0 +1,14 @@
+[
+  {
+    "server": "<your_server_ip>",
+    "port": <your_port>,
+    "password": "<your_password>",
+    "method": "aes-256-gcm"
+  },
+  {
+    "server": "<your_server_ip>",
+    "port": <your_port>,
+    "password": "<your_password>",
+    "method": "aes-256-gcm"
+  }
+]

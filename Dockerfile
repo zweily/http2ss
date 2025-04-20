@@ -11,7 +11,8 @@ RUN apk update && apk add --no-cache \
     privoxy \
     # For Go and go-shadowsocks2 build
     git \
-    go
+    go \
+    jq
 
 # Install go-shadowsocks2 (alternative implementation to shadowsocks-libev)
 RUN go install github.com/shadowsocks/go-shadowsocks2@latest && \

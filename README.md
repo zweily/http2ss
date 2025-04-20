@@ -118,6 +118,66 @@ The Shadowsocks settings are configured via environment variables in docker-comp
 
 Modify `config/privoxy.conf` to customize the HTTP proxy behavior.
 
+## High Availability (HA) Support for Shadowsocks Servers
+
+### How It Works
+
+This project now supports high availability for Shadowsocks servers. Instead of configuring a single server, you can provide a list of servers in `config/ss_servers.json`. The container will:
+
+- Periodically check the health of the current Shadowsocks server.
+- If the server becomes unreachable, automatically switch to the next available server in the list.
+- Continue to monitor and switch as needed, ensuring proxy service remains available as long as at least one server is up.
+
+### Configuring Multiple Servers
+
+1. **Edit `config/ss_servers.json`**
+
+   Example format:
+   ```json
+   [
+     {
+       "server": "<your_server_ip>",
+       "port": <your_port>,
+       "password": "<your_password>",
+       "method": "aes-256-gcm"
+     },
+     {
+       "server": "<another_server_ip>",
+       "port": <another_port>,
+       "password": "<another_password>",
+       "method": "aes-256-gcm"
+     }
+   ]
+   ```
+   You can add as many servers as you want to this list.
+
+2. **Update `docker-compose.yml`**
+
+   - Remove any `SS_SERVER`, `SS_PORT`, `SS_PASSWORD`, and `SS_METHOD` environment variables.
+   - Mount the `ss_servers.json` file as a read-only volume:
+     ```yaml
+     volumes:
+       - ./logs:/var/log
+       - ./config/ss_servers.json:/config/ss_servers.json:ro
+     ```
+
+3. **Build and run as usual**
+
+   The container will automatically handle server failover.
+
+### How the Health Check and Switch Works
+
+- The `start.sh` script reads the list of servers from `ss_servers.json`.
+- It checks each server's reachability (using a TCP connection to the server's port).
+- If the current server is down, it kills the running Shadowsocks process and starts a new one with the next available server.
+- This check runs in a loop, so the system will always try to use the first available server in the list.
+- All switching and health checks are automatic; no manual intervention is needed.
+
+### Logs
+
+- Shadowsocks and failover logs are available in `logs/supervisor/shadowsocks-stdout.log`.
+- You can monitor these logs to see when a server switch occurs.
+
 ## Future Enhancements
 
 ### True HTTPS Proxy Support
