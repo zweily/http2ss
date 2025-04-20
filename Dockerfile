@@ -1,5 +1,8 @@
 FROM alpine:latest
 
+# Use Aliyun mirror for faster package installation in China
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
 # Install base packages and dependencies
 RUN apk update && apk add --no-cache \
     bash \
