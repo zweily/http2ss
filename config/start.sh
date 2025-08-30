@@ -9,20 +9,17 @@ echo "Setting up configurations..."
 
 check_server() {
     local idx=$1
-    local server=$(jq -r ".[$idx].server" /etc/ss_servers.json)
-    local port=$(jq -r ".[$idx].port" /etc/ss_servers.json)
-    local password=$(jq -r ".[$idx].password" /etc/ss_servers.json)
-    local method=$(jq -r ".[$idx].method" /etc/ss_servers.json)
+    local server=$(jq -r ".[${idx}].server" /etc/ss_servers.json)
+    local port=$(jq -r ".[${idx}].port" /etc/ss_servers.json)
+    local password=$(jq -r ".[${idx}].password" /etc/ss_servers.json)
+    local method=$(jq -r ".[${idx}].method" /etc/ss_servers.json)
     local socks_port=1080
 
-    # Kill any previous go-shadowsocks2 process
     pkill -f go-shadowsocks2 || true
-    # Start go-shadowsocks2 in background
     nohup go-shadowsocks2 -c "$server:$port" -password "$password" -cipher "$method" -socks ":$socks_port" -u -verbose &> /var/log/supervisor/shadowsocks-stdout.log &
     local ss_pid=$!
     sleep 2
 
-    # Try to access Google via the local SOCKS5 proxy
     curl --socks5-hostname 127.0.0.1:$socks_port --max-time 8 -s https://www.google.com -o /dev/null
     local result=$?
     if [ $result -eq 0 ]; then
@@ -51,7 +48,7 @@ if [ "$servers_count" -eq 0 ]; then
 fi
 current_index=0
 
-while true; do
+( while true; do
     found_working=0
     for ((i=0; i<servers_count; i++)); do
         echo "Testing Shadowsocks server index $i..."
@@ -66,7 +63,6 @@ while true; do
         sleep 30
         continue
     fi
-    # Monitor the working server
     while true; do
         sleep 30
         echo "Rechecking current Shadowsocks server index $current_index..."
@@ -75,6 +71,8 @@ while true; do
             break
         fi
     done
-    # Loop will try next available server
     sleep 2
-done
+done ) &
+
+echo "Starting supervisord..."
+exec /usr/bin/supervisord -c /etc/supervisord.conf

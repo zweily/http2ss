@@ -10,6 +10,7 @@ RUN apk update && apk add --no-cache \
     tzdata \
     ca-certificates \
     supervisor \
+    netcat-openbsd \
     # For HTTP/HTTPS proxy
     privoxy \
     # For Go and go-shadowsocks2 build
@@ -37,8 +38,6 @@ RUN chmod +x /start.sh
 EXPOSE 1080
 # HTTP proxy port (Privoxy)
 EXPOSE 8080
-# HTTPS proxy port (Privoxy)
-EXPOSE 8443
 
 # Set entrypoint
 ENTRYPOINT ["/start.sh"]
